@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 
 from __future__ import division
+from __future__ import print_function
 from __future__ import absolute_import
 
 PKG = 'px4'
@@ -144,17 +145,15 @@ class MavrosOffboardPosctlTest(MavrosTestCommon):
             self.reach_position(positions[i][0], positions[i][1],
                                 positions[i][2], 30)
         
-        self.set_mode("AUTO.LOITER", 30)
+        self.set_mode("AUTO.LOITER", 5)
+        t = 30
         while t:
-            mins, secs = divmod(t=30, 60)
+            mins, secs = divmod(t, 60)
             timer = '{:02d}:{:02d}'.format(mins, secs)
-            print(timer, end="\r")
+            # print(timer, end="\r")
+            rospy.loginfo("Timer: {:02d}:{:02d}".format(mins, secs))
             time.sleep(1)
             t -= 1
-        # rospy.loginfo("Time now: {0}".format(rospy.Time.now().to_sec()))        ## USE SOMETHING ELSE OTHER THAN ROSPY TIME ##
-        # start_timer = rospy.Time.now().to_sec() + rospy.Duration(30)
-        # if (rospy.Time.now().to_sec() - start_timer) < rospy.Duration(30):
-        #     rospy.loginfo("Timer: {0}".format(rospy.Time.now().to_sec() - start_timer))
             
 
         self.set_mode("AUTO.LAND", 5)
@@ -166,6 +165,5 @@ class MavrosOffboardPosctlTest(MavrosTestCommon):
 if __name__ == '__main__':
     import rostest
     rospy.init_node('test_node', anonymous=True)
-
     rostest.rosrun(PKG, 'mavros_offboard_posctl_test',
                    MavrosOffboardPosctlTest)
