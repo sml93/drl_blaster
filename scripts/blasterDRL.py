@@ -46,3 +46,12 @@ class Intel:
   def predictOne(self, state_test):
     return self.predict(state_test.reshape(1, self.num_state)).flatten()
 
+
+class Memory:
+  def __init__(self, memory_capacity):
+    self.memory_capacity = memory_capacity
+    self.samples = []
+  def add(self, experience):
+    self.samples.append(experience)
+      pass
+
