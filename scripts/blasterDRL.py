@@ -228,3 +228,33 @@ def main_loop():
   # Take an action
   num_state = 3   # state=[UAB_height, UAV_vertical_vel,
   num_action = 2
+  agent = Agent(num_state, num_action)
+  R = 0
+  n = 0
+  model_saved = 0
+  num_trial = 0   # num of current trial
+  new_trial = False
+
+  r = rospy.Rate(20)    # 20Hz
+
+  # Get states
+  normalized_pos_z = (UAV_Pos.pose.position.z - 20.0) / 10.0    # UAV_Pos.pose.position.z: [10,30]
+  normalized_vel_z = (UAV_Vel.twist.linear.z / 3.0)
+  normalized_thrust = (UAV_Att_Setpoint.thrust - 0.59) / 0.19
+  state = np.array((normalized_pos_z, normalized_vel_z, normalized_thrust))
+
+  # Take action
+  env_ip.action = agent.act(state)
+
+  output_file_name = 'result_output.txt'    # record the training result
+
+  while not rospy.is_shutdown():
+    if(att_running.running):
+      n += 1
+
+      state_, reward, done, failed = interact()
+      if done:
+        state_ = None
+        rospy.loginfo('Memory: state(Pos, Vel, thrust): %f, %f, %f action: %f reward: %f state_: %f, %f, %f',
+                      state[0], state[1], state[2], env_ip.action, reward, 0.0, 0.0, 0.0)
+
