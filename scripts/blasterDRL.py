@@ -3,8 +3,9 @@
 import sys
 import math
 import rospy
-import numpy
 import random
+import os.path
+import numpy as np
 
 from drl_blaster.msg import Num
 from drl_blaster.msg import IP
@@ -226,7 +227,7 @@ def main_loop():
   rospy.Subscriber('/mavros/setpoint_raw/attitude', AttitudeTarget, local_attitude_setpoint_cb)
 
   # Take an action
-  num_state = 3   # state=[UAB_height, UAV_vertical_vel,
+  num_state = 3   # state=[UAB_height, UAV_vertical_vel, UAV_Att_Setpoint.thrust]
   num_action = 2
   agent = Agent(num_state, num_action)
   R = 0
@@ -246,7 +247,8 @@ def main_loop():
   # Take action
   env_ip.action = agent.act(state)
 
-  output_file_name = 'result_output.txt'    # record the training result
+  save_path = os.getcwd()
+  output_file_name = os.path.join(save_path + 'result_output.txt')    # record the training result
 
   while not rospy.is_shutdown():
     if(att_running.running):
@@ -256,5 +258,67 @@ def main_loop():
       if done:
         state_ = None
         rospy.loginfo('Memory: state(Pos, Vel, thrust): %f, %f, %f action: %f reward: %f state_: %f, %f, %f',
-                      state[0], state[1], state[2], env_ip.action, reward, 0.0, 0.0, 0.0)
+         state[0], state[1], state[2], env_ip.action, reward, 0.0, 0.0, 0.0)
+      else:
+        rospy.loginfo('Memory: state(Pos, Vel, thrust): %f, %f, %f action: %f reward: %f state_: %f, %f, %f',
+         state[0], state[1], state[2], env_ip.action, reward, state_[0], state_[1], state_[2])
 
+        try:
+          agent.observe((state,env_ip.action, reward, state_))
+          agent.replay()
+        except KeyboardInterrupt:
+          print('Interrupted')
+          sys.exit(0)
+
+      R += reward
+
+      normalized_pos_z = (UAV_Pos.pose.position.z - 20.0) / 10.0    # UAV_Pos.pose.position.z: [10,30]
+      normalized_vel_z = (UAV_Vel.twist.linear.z / 3.0)
+      normalized_thrust = (UAV_Att_Setpoint.thrust - 0.59) / 0.19
+      state = np.array((normalized_pos_z, normalized_vel_z, normalized_thrust))
+
+      env_ip.action = agent.act(state)
+
+      if done:
+        env_ip.action -= -1.0
+        pub.publish(env_ip)
+        rospy.loginfo('Restarting')
+
+      if((new_trial == True) and done):
+        num_trial += 1
+        new_trial = False
+
+        # Record the trial result:    # stored in current working folder!
+        with open(output_file_name, 'a') as f:
+          f.write(str(num_trial) + 'trial: ' + 'Total reward: ' + str(R) + '\n')
+
+        rospy.sleep(0.1)
+
+        if (R > 300.0):
+          model_saved += 1
+          agent.intel.model.save("drl_blaster_model_"+str(int(R))+".h5")
+        n = 0
+        R = 0.0
+
+      rospy.loginfo('%d trial: n: %d current state(Pos, Vel, thrust): %f, %f, %f current action: %f current reward: %f Total reward: %f',
+       num_trial, n, UAV_Pos.pose.position.z, UAV_Vel.twist.linear.z, UAV_Att_Setpoint.thrust, env_ip.action, reward, R)
+
+    else:   # Restarting!
+      new_trial = True
+      env_ip.action = random.randint(0,1)   # To restart the game
+      pub.publish(env_ip)
+
+    r.sleep()
+
+  agent.intel.model.save("drl_blaster_latest.h5")
+  print("(Running) Total reward:", R)
+
+
+if __name__ == "__main__":
+  try:
+    main_loop()
+  except rospy.ROSInterruptException:
+    pass
+  except KeyboardInterrupt:
+    print('User interrupted')
+    sys.exit(0)
