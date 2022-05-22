@@ -217,4 +217,14 @@ def main_loop():
 
   rospy.init_node('blasterDRL', anonymous=True)
   
-  rospy.Subscriber('')
+  rospy.Subscriber('sim_status', OP, status_update)
+  rospy.Subscriber('mavros/local_position/pose', PoseStamped, UAV_pos_cb)
+  rospy.Subscriber('mavros/local_position/velocity', TwistStamped, UAV_vel_cb)
+
+  rospy.Subscriber('restart_finished_msg', Restart_Finished, restart_finished_cb)
+  rospy.Subscriber('att_running_msg', AttControlRunning, att_running_cb)
+  rospy.Subscriber('/mavros/setpoint_raw/attitude', AttitudeTarget, local_attitude_setpoint_cb)
+
+  # Take an action
+  num_state = 3   # state=[UAB_height, UAV_vertical_vel,
+  num_action = 2
