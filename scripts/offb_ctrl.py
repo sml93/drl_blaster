@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
 
+
 PKG = 'px4'
 
 import math
@@ -14,6 +15,7 @@ import numpy as np
 from six.moves import xrange
 from threading import Thread
 from pymavlink import mavutil
+from std_msgs.msg import Bool
 from std_msgs.msg import Header
 from mavros_msgs.msg import ParamValue
 from mavros_test_common import MavrosTestCommon
@@ -38,6 +40,10 @@ class MavrosOffboardPosctlTest(MavrosTestCommon):
         self.pos_setpoint_pub = rospy.Publisher(
             'mavros/setpoint_position/local', PoseStamped, queue_size=1)
 
+        self.Bool = Bool(True)
+        self.attRunning_pub = rospy.Publisher(
+            'att_running_msg', Bool, queue_size=10)
+
         # send setpoints in seperate thread to better prevent failsafe
         self.pos_thread = Thread(target=self.send_pos, args=())
         self.pos_thread.daemon = True
@@ -57,6 +63,7 @@ class MavrosOffboardPosctlTest(MavrosTestCommon):
         while not rospy.is_shutdown():
             self.pos.header.stamp = rospy.Time.now()
             self.pos_setpoint_pub.publish(self.pos)
+            self.attRunning_pub.publish(self.Bool)
             try:  # prevent garbage in console output when thread is killed
                 rate.sleep()
             except rospy.ROSInterruptException:
@@ -139,7 +146,7 @@ class MavrosOffboardPosctlTest(MavrosTestCommon):
         rospy.loginfo("run mission")
         # positions = ((0, 0, 0), (10, 10, 5), (10, -10, 5), (-10, -10, 5),
         #              (0, 0, 5))
-        positions = ((0, 0, 5), (0, 0, 5))
+        positions = ((0, 0, 15), (0, 0, 20))
 
         for i in xrange(len(positions)):
             self.reach_position(positions[i][0], positions[i][1],

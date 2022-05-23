@@ -132,11 +132,9 @@ class Agent:
 
     for i in range(len_batch):
       o = batch[i]
-      # print('o: ',o)
       s = o[0]; a = int(o[1]); r = o[2]; s_ = o[3]
 
       v_t = v[i]
-      # print("v_t: ", v_t)
       if s_ is None:
         v_t[a] = r
       
@@ -224,12 +222,12 @@ def main_loop():
   
   rospy.Subscriber('sim_status', OP, status_update)
   rospy.Subscriber('mavros/local_position/pose', PoseStamped, UAV_pos_cb)
-  rospy.Subscriber('mavros/local_position/velocity_body', TwistStamped, UAV_vel_cb)
+  rospy.Subscriber('mavros/local_position/velocity', TwistStamped, UAV_vel_cb)
 
   rospy.Subscriber('restart_finished_msg', Restart_Finished, restart_finished_cb)
   rospy.Subscriber('att_running_msg', Bool, att_running_cb)
   # rospy.Subscriber('att_running_msg', AttControlRunning, att_running_cb)
-  rospy.Subscriber('mavros/setpoint_raw/target_attitude', AttitudeTarget, local_attitude_setpoint_cb)
+  rospy.Subscriber('mavros/setpoint_raw/attitude', AttitudeTarget, local_attitude_setpoint_cb)
 
   # Take an action
   num_state = 3   # state=[UAB_height, UAV_vertical_vel, UAV_Att_Setpoint.thrust]
