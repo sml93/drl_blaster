@@ -314,7 +314,7 @@ def main_loop():
 
     else:   # Restarting!
       new_trial = True
-      env_ip.action = random.randint(0,1)   # To restart the game
+      env_ip.action = random.randint(0,1)   # To restart the training
       pub.publish(env_ip)
 
     r.sleep()
