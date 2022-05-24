@@ -15,3 +15,7 @@ TODO/TO FIX:
 3) If attempting to redo, prepare for attitude/position (x,y,z) instead of just z.  
 4) ~~How to get thrust states from mavros (FIXED with /setpoint_raw/target_attitude)~~.  
 5) To check on env_ip and its publisher.   
+
+
+Edit:
+1) Amended pub topic to sent to (Topic name)/mavros/setpoint_raw/attitude (Type)mavros_msgs/AttitudeTarget instead of 'input'.  

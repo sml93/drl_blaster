@@ -178,7 +178,7 @@ def local_attitude_setpoint_cb(data):
 
 
 # Publisher 
-pub = rospy.Publisher('input', IP, queue_size=10)
+pub = rospy.Publisher('mavros/setpoint_attitude/thrust', IP, queue_size=10)    # Amended topic name to send to thrust
 env_ip = IP()
 current_status = OP()
 env_ip.action = 1
@@ -287,6 +287,7 @@ def main_loop():
       state = np.array((normalized_pos_z, normalized_vel_z, normalized_thrust))
 
       env_ip.action = agent.act(state)
+      print('action: ',env_ip.action)   # Check to see whats the action taken now
 
       if done:
         env_ip.action -= -1.0

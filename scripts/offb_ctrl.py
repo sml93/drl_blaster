@@ -143,15 +143,18 @@ class MavrosOffboardPosctlTest(MavrosTestCommon):
         self.set_arm(True, 5)
         start_timer = rospy.Time.now()
 
+        time.sleep(1)
+
         rospy.loginfo("run mission")
         # positions = ((0, 0, 0), (10, 10, 5), (10, -10, 5), (-10, -10, 5),
         #              (0, 0, 5))
-        positions = ((0, 0, 15), (0, 0, 20))
+        positions = ((0, 0, 5), (0, 0, 5), (0, 0, 10))
 
         for i in xrange(len(positions)):
             self.reach_position(positions[i][0], positions[i][1],
                                 positions[i][2], 30)
         
+        time.sleep(15)
         self.set_mode("AUTO.LOITER", 5)
         t = 30
         while t:
