@@ -12,6 +12,7 @@ from mavros_msgs.srv import CommandBool, ParamGet, ParamSet, SetMode, SetModeReq
 from pymavlink import mavutil
 from sensor_msgs.msg import NavSatFix, Imu
 from six.moves import xrange
+from std_msgs.msg import Bool
 
 
 class MavrosTestCommon(unittest.TestCase):
@@ -28,6 +29,7 @@ class MavrosTestCommon(unittest.TestCase):
         self.mission_wp = WaypointList()
         self.state = State()
         self.mav_type = None
+        self.mission_done = Bool(False)
 
         self.sub_topics_ready = {
             key: False
@@ -82,6 +84,7 @@ class MavrosTestCommon(unittest.TestCase):
             'mavros/mission/waypoints', WaypointList, self.mission_wp_callback)
         self.state_sub = rospy.Subscriber('mavros/state', State,
                                           self.state_callback)
+        self.mission_status_sub = rospy.Subscriber('mission_status', Bool, self.mission_status_cb)
 
     def tearDown(self):
         self.log_topic_vars()
@@ -172,6 +175,9 @@ class MavrosTestCommon(unittest.TestCase):
         # mavros publishes a disconnected state message on init
         if not self.sub_topics_ready['state'] and data.connected:
             self.sub_topics_ready['state'] = True
+
+    def mission_status_cb(self, data):
+        self.mission_done = data
 
     #
     # Helper methods

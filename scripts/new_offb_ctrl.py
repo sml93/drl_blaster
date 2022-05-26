@@ -44,6 +44,10 @@ class MavrosOffboardPosctlTest(MavrosTestCommon):
         self.attRunning_pub = rospy.Publisher(
             'att_running_msg', Bool, queue_size=10)
 
+        # # self.mission_done = Bool(False)
+        # self.mission_status_sub = rospy.Subscriber(
+        #     'mission_status', Bool, self.mission_status_cb)
+
         # send setpoints in seperate thread to better prevent failsafe
         self.pos_thread = Thread(target=self.send_pos, args=())
         self.pos_thread.daemon = True
@@ -51,6 +55,9 @@ class MavrosOffboardPosctlTest(MavrosTestCommon):
 
     def tearDown(self):
         super(MavrosOffboardPosctlTest, self).tearDown()
+
+    # def mission_status_cb(self, data):
+    #   self.mission_done = data
 
     #
     # Helper methods
@@ -148,15 +155,18 @@ class MavrosOffboardPosctlTest(MavrosTestCommon):
         rospy.loginfo("run mission")
         # positions = ((0, 0, 0), (10, 10, 5), (10, -10, 5), (-10, -10, 5),
         #              (0, 0, 5))
-        positions = ((0, 0, 5), (0, 0, 5), (0, 0, 10))
+        # positions = ((0, 0, 5), (0, 0, 5), (0, 0, 10))
 
-        for i in xrange(len(positions)):
-            self.reach_position(positions[i][0], positions[i][1],
-                                positions[i][2], 30)
-        
-        time.sleep(15)
+        rospy.loginfo("Mission done?: {0}".format(str(self.mission_done.data)))
+        while not rospy.is_shutdown():
+          if not self.mission_done.data:
+            self.reach_position(0, 0, 20, 30)
+          else:
+            break
+                  
+        # time.sleep(15)
         self.set_mode("AUTO.LOITER", 5)
-        t = 30
+        t = 3
         while t:
             mins, secs = divmod(t, 60)
             timer = '{:02d}:{:02d}'.format(mins, secs)

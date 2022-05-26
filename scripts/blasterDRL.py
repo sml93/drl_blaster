@@ -18,6 +18,7 @@ from geometry_msgs.msg import TwistStamped
 from drl_blaster.msg import AttitudeTarget
 from drl_blaster.msg import Restart_Finished
 from drl_blaster.msg import AttControlRunning
+from mavros_msgs.msg import AttitudeTarget
 
 from keras.layers import *
 from keras.optimizers import *
@@ -176,12 +177,11 @@ def local_attitude_setpoint_cb(data):
   UAV_Att_Setpoint = data
 
 
-
 # Publisher 
-pub = rospy.Publisher('mavros/setpoint_attitude/thrust', IP, queue_size=10)    # Amended topic name to send to thrust
-env_ip = IP()
+pub = rospy.Publisher('mavros/setpoint_raw/attitude', AttitudeTarget, queue_size=10)    # Amended topic name to send to thrust
+env_ip = AttitudeTarget()
 current_status = OP()
-env_ip.action = 1
+env_ip.thrust = 1
 
 def status_update(data):
   global current_status
@@ -251,29 +251,30 @@ def main_loop():
   print(state)
 
   # Take action
-  env_ip.action = agent.act(state)
+  env_ip.thrust = agent.act(state)
 
   save_path = os.getcwd()
-  output_file_name = os.path.join(save_path + 'result_output.txt')    # record the training result
-  print('ok')
+  output_file_name = os.path.join(save_path + '/result_output.txt')    # record the training result
+  # print('ok', output_file_name)
 
   while not rospy.is_shutdown():
     print(att_running.data)
     if(att_running.data):
       n += 1
-      print(n)
+      # print(n)
+      print('ok', output_file_name)
 
       state_, reward, done, failed = interact()
       if done:
         state_ = None
-        rospy.loginfo('Memory: state(Pos, Vel, thrust): %f, %f, %f action: %f reward: %f state_: %f, %f, %f',
-         state[0], state[1], state[2], env_ip.action, reward, 0.0, 0.0, 0.0)
+        rospy.loginfo('Memory: state(Pos, Vel, thrust): %f, %f, %f action: %f reward: %f state_: %f, %f, %f \n',
+         state[0], state[1], state[2], env_ip.thrust, reward, 0.0, 0.0, 0.0)
       else:
-        rospy.loginfo('Memory: state(Pos, Vel, thrust): %f, %f, %f action: %f reward: %f state_: %f, %f, %f',
-         state[0], state[1], state[2], env_ip.action, reward, state_[0], state_[1], state_[2])
+        rospy.loginfo('Memory: state(Pos, Vel, thrust): %f, %f, %f action: %f reward: %f state_: %f, %f, %f \n',
+         state[0], state[1], state[2], env_ip.thrust, reward, state_[0], state_[1], state_[2])
 
         try:
-          agent.observe((state,env_ip.action, reward, state_))
+          agent.observe((state,env_ip.thrust, reward, state_))
           agent.replay()
         except KeyboardInterrupt:
           print('Interrupted')
@@ -286,11 +287,11 @@ def main_loop():
       normalized_thrust = (UAV_Att_Setpoint.thrust - 0.59) / 0.19
       state = np.array((normalized_pos_z, normalized_vel_z, normalized_thrust))
 
-      env_ip.action = agent.act(state)
-      print('action: ',env_ip.action)   # Check to see whats the action taken now
+      env_ip.thrust = agent.act(state)
+      print('action: ',env_ip.thrust)   # Check to see whats the action taken now
 
       if done:
-        env_ip.action -= -1.0
+        env_ip.thrust -= -1.0
         pub.publish(env_ip)
         rospy.loginfo('Restarting')
 
@@ -310,12 +311,12 @@ def main_loop():
         n = 0
         R = 0.0
 
-      rospy.loginfo('%d trial: n: %d current state(Pos, Vel, thrust): %f, %f, %f current action: %f current reward: %f Total reward: %f',
-       num_trial, n, UAV_Pos.pose.position.z, UAV_Vel.twist.linear.z, UAV_Att_Setpoint.thrust, env_ip.action, reward, R)
+      rospy.loginfo('%d trial: n: %d current state(Pos, Vel, thrust): %f, %f, %f current action: %f current reward: %f Total reward: %f \n',
+       num_trial, n, UAV_Pos.pose.position.z, UAV_Vel.twist.linear.z, UAV_Att_Setpoint.thrust, env_ip.thrust, reward, R)
 
     else:   # Restarting!
       new_trial = True
-      env_ip.action = random.randint(0,1)   # To restart the training
+      env_ip.thrust = random.randint(0,1)   # To restart the training
       pub.publish(env_ip)
 
     r.sleep()
