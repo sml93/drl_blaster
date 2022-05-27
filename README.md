@@ -31,3 +31,8 @@ Add an attiTarget.py to test if the UAV responds to external publishing of topic
 blasterDRL.py working now but..  
 TODO/TOFIX:  
 1) To check on saving to result_output.txt and h5 model. The model seems small. Not sure if its too easy so less data or..  
+
+**27 May 2022**
+model not saving because new_trial and done not false at the same time,
+TODO/TOFIX:
+1) To check on line 298 to see if can rewrite that logic there, see if you can bring the model.save out instead of cascading it within.  

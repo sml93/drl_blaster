@@ -232,7 +232,7 @@ def main_loop():
   rospy.Subscriber('mavros/setpoint_raw/target_attitude', AttitudeTarget, local_attitude_setpoint_cb)
 
   # Take an action
-  num_state = 3   # state=[UAB_height, UAV_vertical_vel, UAV_Att_Setpoint.thrust]
+  num_state = 3   # state=[UAV_height, UAV_vertical_vel, UAV_Att_Setpoint.thrust]
   num_action = 2
   agent = Agent(num_state, num_action)
   R = 0
@@ -258,11 +258,11 @@ def main_loop():
   # print('ok', output_file_name)
 
   while not rospy.is_shutdown():
-    print(att_running.data)
+    print('who am i', att_running.data)
     if(att_running.data):
       n += 1
       # print(n)
-      print('ok', output_file_name)
+      # print('ok', output_file_name)
 
       state_, reward, done, failed = interact()
       if done:
@@ -295,6 +295,13 @@ def main_loop():
         pub.publish(env_ip)
         rospy.loginfo('Restarting')
 
+      ## Testing to see if insert here will be able to solve the problem ##
+      if(R>300.0):
+        model_saved += 1
+        agent.intel.model.save("drl_blaster_model_"+str(int(R))+".h5")
+      n = 0
+      R = 0.0
+
       if((new_trial == True) and done):
         num_trial += 1
         new_trial = False
@@ -302,6 +309,7 @@ def main_loop():
         # Record the trial result:    # stored in current working folder!
         with open(output_file_name, 'a') as f:
           f.write(str(num_trial) + 'trial: ' + 'Total reward: ' + str(R) + '\n')
+          print('written')
 
         rospy.sleep(0.1)
 
@@ -316,6 +324,7 @@ def main_loop():
 
     else:   # Restarting!
       new_trial = True
+      print(new_trial)
       env_ip.thrust = random.randint(0,1)   # To restart the training
       pub.publish(env_ip)
 
