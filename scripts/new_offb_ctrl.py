@@ -160,7 +160,7 @@ class MavrosOffboardPosctlTest(MavrosTestCommon):
         rospy.loginfo("Mission done?: {0}".format(str(self.mission_done.data)))
         while not rospy.is_shutdown():
           if not self.mission_done.data:
-            self.reach_position(0, 0, 20, 30)
+            self.reach_position(0, 0, 10, 30)
           else:
             break
                   

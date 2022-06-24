@@ -32,7 +32,15 @@ blasterDRL.py working now but..
 TODO/TOFIX:  
 1) To check on saving to result_output.txt and h5 model. The model seems small. Not sure if its too easy so less data or..  
 
-**27 May 2022**
-model not saving because new_trial and done not false at the same time,
-TODO/TOFIX:
+**27 May 2022**  
+model not saving because new_trial and done not false at the same time,  
+TODO/TOFIX:  
 1) To check on line 298 to see if can rewrite that logic there, see if you can bring the model.save out instead of cascading it within.  
+
+**24 June 2022**  
+TODO/TOFIX:  
+1) To check on line 298 to see if can rewrite that logic there, see if you can bring the model.save out instead of cascading it within.  
+2) To fix line line 146 on IndexError  --> Just implemented a quick and dirty way, need to revisit!  
+3) To figure out why the algo not sending commands to fight the disturbance from attiTarget.py  
+
+

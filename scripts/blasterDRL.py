@@ -116,6 +116,7 @@ class Agent:
 
   def replay(self):   # get knowledge from experience!
     batch = self.memory.sample(self.MEMORY_BATCH_SIZE)
+    print('batch: ', batch)
     len_batch = len(batch)
 
     no_state = np.zeros(self.num_state)
@@ -132,9 +133,11 @@ class Agent:
     y = np.zeros((len_batch, self.num_action))
 
     for i in range(len_batch):
-      o = batch[i]
-      # print('o: ',o)
-      s = o[0]; a = int(o[1]); r = o[2]; s_ = o[3]
+      o = batch[i] 
+      this = int(o[1])
+      if this > 1:
+        this = 1
+      s = o[0]; a = this; r = o[2]; s_ = o[3]
 
       v_t = v[i]
       # print("v_t: ", v_t)
@@ -142,6 +145,8 @@ class Agent:
         v_t[a] = r
       
       else:
+        print("help la:", np.amax(v_[i]))
+        print("nani: ", a)
         v_t[a] = r + self.GAMMA * np.amax(v_[i])    # we will get max reward if we select the best option.
 
       x[i] = s
@@ -193,22 +198,23 @@ def interact():
 
   pub.publish(env_ip)
 
-  normalized_pos_z = (UAV_Pos.pose.position.z - 20.0)/10.0
-  normalized_vel_z = (UAV_Vel.twist.linear.z / 3.0)
-  normalized_thrust = (UAV_Att_Setpoint.thrust - 0.59) / 0.19
-  state_ = np.array((normalized_pos_z,normalized_vel_z, normalized_thrust))
+  # normalized_pos_z = (UAV_Pos.pose.position.z - 20.0)/10.0        # Current alt - 20
+  # normalized_vel_z = (UAV_Vel.twist.linear.z / 3.0)               # Max vel_z seems to be 3.0m/s
+  # normalized_thrust = (UAV_Att_Setpoint.thrust - 0.59) / 0.19
+  normalized_pos_z = (UAV_Pos.pose.position.z - 10.0)/np.linalg.norm(UAV_Pos.pose.position.z)
+  normalized_vel_z = np.linalg.norm(UAV_Vel.twist.linear.z)
+  normalized_thrust = np.linalg.norm(UAV_Att_Setpoint.thrust)
+  state_ = np.array((normalized_pos_z, normalized_vel_z, normalized_thrust))
 
   done = False
   reward = 0.0
 
-
-  if ((UAV_Pos.pose.position.z > 30.0) or (UAV_Pos.pose.position.z < 10.0)):
+  if ((UAV_Pos.pose.position.z > 10.5) or (UAV_Pos.pose.position.z < 9.5)):    # adjusted the bound for reward
     done = True
     rospy.loginfo("Restarting!")
 
-  if (math.fabs(UAV_Pos.pose.position.z - 20.0) < 0.3):
+  if (math.fabs(UAV_Pos.pose.position.z - 10.0) < 0.3):       # Giving rewards for errors smaller than 0.3m
     reward = 1.0
-
   return state_, reward, done, True
 
 
@@ -244,11 +250,14 @@ def main_loop():
   r = rospy.Rate(20)    # 20Hz
 
   # Get states
-  normalized_pos_z = (UAV_Pos.pose.position.z - 20.0) / 10.0    # UAV_Pos.pose.position.z: [10,30]
-  normalized_vel_z = (UAV_Vel.twist.linear.z / 3.0)
-  normalized_thrust = (UAV_Att_Setpoint.thrust - 0.59) / 0.19
+  # normalized_pos_z = (UAV_Pos.pose.position.z - 20.0) / 10.0    # UAV_Pos.pose.position.z: [10,30]
+  # normalized_vel_z = (UAV_Vel.twist.linear.z / 3.0)
+  # normalized_thrust = (UAV_Att_Setpoint.thrust - 0.59) / 0.19
+  normalized_pos_z = (UAV_Pos.pose.position.z - 10.0)/np.linalg.norm(UAV_Pos.pose.position.z)
+  normalized_vel_z = np.linalg.norm(UAV_Vel.twist.linear.z)
+  normalized_thrust = np.linalg.norm(UAV_Att_Setpoint.thrust)
   state = np.array((normalized_pos_z, normalized_vel_z, normalized_thrust))
-  print(state)
+  # print(state)
 
   # Take action
   env_ip.thrust = agent.act(state)
@@ -265,6 +274,7 @@ def main_loop():
       # print('ok', output_file_name)
 
       state_, reward, done, failed = interact()
+      print('Reward', reward)
       if done:
         state_ = None
         rospy.loginfo('Memory: state(Pos, Vel, thrust): %f, %f, %f action: %f reward: %f state_: %f, %f, %f \n',
@@ -282,9 +292,9 @@ def main_loop():
 
       R += reward
 
-      normalized_pos_z = (UAV_Pos.pose.position.z - 20.0) / 10.0    # UAV_Pos.pose.position.z: [10,30]
-      normalized_vel_z = (UAV_Vel.twist.linear.z / 3.0)
-      normalized_thrust = (UAV_Att_Setpoint.thrust - 0.59) / 0.19
+      normalized_pos_z = (UAV_Pos.pose.position.z - 10.0)/np.linalg.norm(UAV_Pos.pose.position.z)
+      normalized_vel_z = np.linalg.norm(UAV_Vel.twist.linear.z)
+      normalized_thrust = np.linalg.norm(UAV_Att_Setpoint.thrust)
       state = np.array((normalized_pos_z, normalized_vel_z, normalized_thrust))
 
       env_ip.thrust = agent.act(state)
@@ -301,6 +311,7 @@ def main_loop():
         agent.intel.model.save("drl_blaster_model_"+str(int(R))+".h5")
       n = 0
       R = 0.0
+      new_trial = True
 
       if((new_trial == True) and done):
         num_trial += 1
@@ -308,7 +319,7 @@ def main_loop():
 
         # Record the trial result:    # stored in current working folder!
         with open(output_file_name, 'a') as f:
-          f.write(str(num_trial) + 'trial: ' + 'Total reward: ' + str(R) + '\n')
+          f.write(str(num_trial) + ' trial: ' + 'Total reward: ' + str(R) + '\n')
           print('written')
 
         rospy.sleep(0.1)

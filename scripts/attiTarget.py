@@ -40,8 +40,8 @@ def thruster():
         uav_thruster.orientation.x = quaternion.x
         uav_thruster.orientation.y = -quaternion.y
         uav_thruster.orientation.z = quaternion.z
-        uav_thruster.orientation.w = quaternion.w*0.6
-        uav_thruster.thrust = 0.5
+        uav_thruster.orientation.w = quaternion.w
+        uav_thruster.thrust = 0.2
         print('curr_seq: ', i)
         print(uav_thruster)
         pub.publish(uav_thruster)
