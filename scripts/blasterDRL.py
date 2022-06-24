@@ -267,14 +267,14 @@ def main_loop():
   # print('ok', output_file_name)
 
   while not rospy.is_shutdown():
-    print('who am i', att_running.data)
+    # print('who am i', att_running.data)
     if(att_running.data):
       n += 1
       # print(n)
       # print('ok', output_file_name)
 
       state_, reward, done, failed = interact()
-      print('Reward', reward)
+      # print('Reward', reward)
       if done:
         state_ = None
         rospy.loginfo('Memory: state(Pos, Vel, thrust): %f, %f, %f action: %f reward: %f state_: %f, %f, %f \n',
